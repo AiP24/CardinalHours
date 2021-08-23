@@ -139,7 +139,9 @@ class DB {
 
     addUser(user) {
         log.info('Adding user: ' + user.name);
-        if (this.query({id: user.id})) return false;
+        if (this.query({id: user.id}) || user.name === "" || user.id === "") return false;
+        //Don't add users with missing names or ids as it breaks the system
+        //Will probably work as intended
 
         this.users.push({
             name: user.name,
