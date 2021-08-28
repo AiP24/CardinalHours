@@ -34,19 +34,16 @@ class DB {
         fs.watchFile(this.users_filename, () => {
             this.users = JSON.parse(fs.readFileSync(this.users_filename));
         });
-		
-		fs.watchFile(this.config_filename, () => {
-            this.config = JSON.parse(fs.readFileSync(this.config_filename));
-        });
 
         this.sheet = new GoogleSpreadsheet(this.config.sheets.sheet_id);
         this.creds = this.config.sheets.creds;
         this.checkAuth(err => {
-            if (err) { console.log('Failed to refresh authentication: ' + err + ' This can probably ignored') }
-            else if (!this.isDev) {
+            if (err) return log.error('Failed to refresh authentication: ' + err);
+            if (!this.isDev) {
                 this.syncSheets();
             }
         });
+        this.activeUsers = [];
     }
 
     populateRow(user, headers, row) {
@@ -143,10 +140,10 @@ class DB {
 
     addUser(user) {
         log.info('Adding user: ' + user.name);
-        if (this.query({id: user.id}) ) return 1;
-        //return 1, handle it
-        if (user.name === "" || user.id === "") return 2;
-        //Don't add users with missing names or ids as it breaks the system
+        if (this.query({id: user.id}) || user.id === "" || user.name === "") return false;
+        //an existing username probably does something bad, idk I'm just a noob
+        //the system freaks out on empty username, so just say no
+        //same with passwords
 
         this.users.push({
             name: user.name,
@@ -166,7 +163,7 @@ class DB {
         if (!this.isDev) {
             this.syncSheets();
         }
-
+	
         this.updateUsersFile();
     }
 
@@ -194,12 +191,6 @@ class DB {
         }
     }
 
-    // query(query) { 
-    //     console.log(query)
-    //     console.log(this.users)
-    //     console.log(this.users.find(x => x.id == query.id));
-    //     return this.users.find(x => x.id === query.id);//the query is sometimes a string and sometime int????
-    // }
     query(query) {
         return this.users.find(user => Object.keys(query)
             .every(key => query[key] === user[key])

@@ -25,7 +25,26 @@ export default class MainContainer extends Component {
     render() {
         return (
             <Container className='MainContainer'>
+                <h1>CardinalHours</h1>
                 <Row>
+                    <Col>
+                        {
+                            DB.config.sign_ups ?
+                            <Row>
+                                <h2>Add Users</h2>
+                                <UserDisplay/>
+                            </Row> : null
+                        }
+                        <Row>
+                            <LastActionDisplay/>
+                        </Row>
+                        <AdminPanel/>
+                    </Col>
+                    <Col>
+                        <TimeTable/>
+                    </Col>
+                </Row>
+                {/* <Row>
                     <Col>
                         <h1 className='Header'>CardinalHours</h1>
                     </Col>
@@ -54,7 +73,7 @@ export default class MainContainer extends Component {
                     <Col>
                         <TimeTable/>
                     </Col>
-                </Row>
+                </Row> */}
             </Container>
         )
     }

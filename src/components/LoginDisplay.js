@@ -1,3 +1,4 @@
+//Copy-pasted from UserDisplay
 import React, {Component} from 'react';
 import {
     Container,
@@ -8,12 +9,11 @@ import {
 
 import UserStore from '../state/UserStore';
 
-export default class UserDisplay extends Component {
+export default class LoginDisplay extends Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            name: '',
             id: '',
         };
 
@@ -31,17 +31,32 @@ export default class UserDisplay extends Component {
         e.preventDefault();
 
         const user = {
-            name: this.state.name,
             id: this.state.id
         };
-        const addUserReturnCode = UserStore.addUser(user);
-        if ( addUserReturnCode === true) {
-            UserStore.signInUser(user);
-        } else if (addUserReturnCode === 1) {
-            alert('Student ID Already Taken!');
-        } else if (addUserReturnCode === 2) {
-            alert('Name/Student ID is blank!');
+
+        const match = DB.query({
+            id: this.state.hidden_id
+        });
+
+        if (match) {
+            const index = DB.activeUsers.findIndex(session => session.user.id === match.id);
+
+            if (index === -1) {
+                UserStore.signInUser(match);
+            } else {
+                const session = this.state.sessions[index];
+                session.session.end = moment().toISOString();
+                const duration = moment(session.session.end).diff(session.session.start);
+                if (duration > moment.duration(5, 'seconds') && duration < moment.duration(12, 'hours')) {
+                    DB.addSession(session.user, session.session);
+                }
+                UserStore.signOutUser(session.user, session.session);
+            }
         }
+
+        this.setState({
+            hidden_id: ''
+        });
 
         this.setState({
             name: '',
@@ -52,19 +67,12 @@ export default class UserDisplay extends Component {
     render() {
         return (
             <Container className='UserDisplay'>
+                <h2 className='Header'>Login/Logout</h2>
                 <form onSubmit={this.onSubmit}>
                     <InputGroup>
                         <Input
-                            name='name'
-                            placeholder='Name'
-                            value={this.state.name}
-                            onChange={this.handleChange}
-                        />
-                    </InputGroup>
-                    <InputGroup>
-                        <Input
                         name='id'
-                        placeholder='Student ID'
+                        placeholder='Student ID/Password'
                         value={this.state.id}
                         onChange={this.handleChange}
                         />
@@ -73,7 +81,7 @@ export default class UserDisplay extends Component {
                         color='light'
                         onClick={this.onSubmit}
                         type='submit'
-                    >Add New User</Button>
+                    >Log in/Log out</Button>
                 </form>
             </Container>
         );
